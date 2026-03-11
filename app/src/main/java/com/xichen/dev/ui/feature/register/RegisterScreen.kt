@@ -1,5 +1,12 @@
 package com.xichen.dev.ui.feature.register
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AlternateEmail
+import androidx.compose.material.icons.outlined.Badge
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.TipsAndUpdates
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -8,19 +15,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xichen.dev.R
 import com.xichen.dev.ui.common.AppMessageDialog
+import com.xichen.dev.ui.common.AppDialogTone
 import com.xichen.dev.ui.common.UiText
 import com.xichen.dev.ui.common.asString
 import com.xichen.dev.ui.common.resolve
 import com.xichen.dev.ui.common.auth.AuthFormCard
+import com.xichen.dev.ui.common.auth.AuthFormHeader
 import com.xichen.dev.ui.common.auth.AuthInfoCard
 import com.xichen.dev.ui.common.auth.AuthPasswordField
 import com.xichen.dev.ui.common.auth.AuthPrimaryButton
 import com.xichen.dev.ui.common.auth.AuthScreenScaffold
+import com.xichen.dev.ui.common.auth.AuthSlogan
 import com.xichen.dev.ui.common.auth.AuthTextField
 import com.xichen.dev.ui.theme.ComposetemplateTheme
 
@@ -48,6 +59,7 @@ fun RegisterRoute(
     RegisterScreen(
         state = state,
         onIntent = viewModel::onIntent,
+        onNavigateBack = onNavigateBack,
         snackbarHostState = snackbarHostState,
         modifier = modifier
     )
@@ -57,34 +69,55 @@ fun RegisterRoute(
 fun RegisterScreen(
     state: RegisterState,
     onIntent: (RegisterIntent) -> Unit,
+    onNavigateBack: () -> Unit,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier
 ) {
     AuthScreenScaffold(
         title = null,
-        onBackClick = null,
+        onBackClick = onNavigateBack,
         snackbarHostState = snackbarHostState,
-        modifier = modifier
+        modifier = modifier,
+        showSupportingPane = false
     ) {
         state.submitError?.let { errorText ->
             AuthInfoCard(
                 title = stringResource(R.string.register_error_title),
                 body = errorText.asString(),
-                isError = true
+                isError = true,
+                leadingIcon = Icons.Outlined.TipsAndUpdates
             )
         }
+        AuthSlogan(text = stringResource(R.string.register_slogan))
         AuthFormCard {
+            AuthFormHeader(
+                title = stringResource(R.string.register_form_title),
+                description = stringResource(R.string.register_form_description)
+            )
             AuthTextField(
                 value = state.displayName,
                 onValueChange = { onIntent(RegisterIntent.DisplayNameChanged(it)) },
                 label = stringResource(R.string.register_name_label),
-                errorText = state.displayNameError
+                errorText = state.displayNameError,
+                leadingContent = {
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Outlined.Badge,
+                        contentDescription = null
+                    )
+                }
             )
             AuthTextField(
                 value = state.email,
                 onValueChange = { onIntent(RegisterIntent.EmailChanged(it)) },
                 label = stringResource(R.string.register_email_label),
-                errorText = state.emailError
+                errorText = state.emailError,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                leadingContent = {
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Outlined.AlternateEmail,
+                        contentDescription = null
+                    )
+                }
             )
             AuthPasswordField(
                 value = state.password,
@@ -92,7 +125,14 @@ fun RegisterScreen(
                 label = stringResource(R.string.register_password_label),
                 visible = state.isPasswordVisible,
                 onToggleVisibility = { onIntent(RegisterIntent.TogglePasswordVisibility) },
-                errorText = state.passwordError
+                errorText = state.passwordError,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                leadingContent = {
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Outlined.Lock,
+                        contentDescription = null
+                    )
+                }
             )
             AuthPasswordField(
                 value = state.confirmPassword,
@@ -100,7 +140,14 @@ fun RegisterScreen(
                 label = stringResource(R.string.register_confirm_password_label),
                 visible = state.isConfirmPasswordVisible,
                 onToggleVisibility = { onIntent(RegisterIntent.ToggleConfirmPasswordVisibility) },
-                errorText = state.confirmPasswordError
+                errorText = state.confirmPasswordError,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                leadingContent = {
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Outlined.Lock,
+                        contentDescription = null
+                    )
+                }
             )
             AuthPrimaryButton(
                 text = stringResource(R.string.register_submit),
@@ -128,7 +175,9 @@ private fun RegisterSuccessDialog(
         title = UiText.StringResource(R.string.register_success_title),
         message = message,
         confirmText = UiText.StringResource(R.string.register_success_confirm),
-        onConfirm = onConfirm
+        onConfirm = onConfirm,
+        icon = Icons.Outlined.CheckCircle,
+        tone = AppDialogTone.Success
     )
 }
 
@@ -139,6 +188,7 @@ private fun RegisterScreenPreview() {
         RegisterScreen(
             state = RegisterState(),
             onIntent = {},
+            onNavigateBack = {},
             snackbarHostState = remember { SnackbarHostState() }
         )
     }
