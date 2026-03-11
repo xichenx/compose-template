@@ -3,7 +3,6 @@ package com.xichen.dev.ui.feature.authentry
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -123,71 +122,68 @@ private fun AuthEntrySplitCards(
     onOpenLogin: () -> Unit,
     onOpenRegister: () -> Unit
 ) {
-    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val useRow = maxWidth >= 460.dp
-        if (useRow) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.appSpacing.md)
-            ) {
-                AuthEntryOptionCard(
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Outlined.Lock,
-                    title = stringResource(R.string.auth_entry_login_title),
-                    description = stringResource(R.string.auth_entry_login_description),
-                    actionText = stringResource(R.string.auth_entry_login_action),
-                    badgeText = stringResource(R.string.auth_entry_login_badge),
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    accentColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    enabled = enabled,
-                    onClick = onOpenLogin,
-                    compact = compact
-                )
-                AuthEntryOptionCard(
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Outlined.PersonAddAlt1,
-                    title = stringResource(R.string.auth_entry_register_title),
-                    description = stringResource(R.string.auth_entry_register_description),
-                    actionText = stringResource(R.string.auth_entry_register_action),
-                    badgeText = stringResource(R.string.auth_entry_register_badge),
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    accentColor = MaterialTheme.colorScheme.tertiary,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                    enabled = enabled,
-                    onClick = onOpenRegister,
-                    compact = compact
-                )
-            }
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.appSpacing.sm)) {
-                AuthEntryOptionCard(
-                    icon = Icons.Outlined.Lock,
-                    title = stringResource(R.string.auth_entry_login_title),
-                    description = stringResource(R.string.auth_entry_login_description),
-                    actionText = stringResource(R.string.auth_entry_login_action),
-                    badgeText = stringResource(R.string.auth_entry_login_badge),
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    accentColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    enabled = enabled,
-                    onClick = onOpenLogin,
-                    compact = compact
-                )
-                AuthEntryOptionCard(
-                    icon = Icons.Outlined.PersonAddAlt1,
-                    title = stringResource(R.string.auth_entry_register_title),
-                    description = stringResource(R.string.auth_entry_register_description),
-                    actionText = stringResource(R.string.auth_entry_register_action),
-                    badgeText = stringResource(R.string.auth_entry_register_badge),
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    accentColor = MaterialTheme.colorScheme.tertiary,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                    enabled = enabled,
-                    onClick = onOpenRegister,
-                    compact = compact
-                )
-            }
+    if (!compact) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.appSpacing.md)
+        ) {
+            AuthEntryOptionCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Outlined.Lock,
+                title = stringResource(R.string.auth_entry_login_title),
+                description = stringResource(R.string.auth_entry_login_description),
+                actionText = stringResource(R.string.auth_entry_login_action),
+                badgeText = stringResource(R.string.auth_entry_login_badge),
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                accentColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                enabled = enabled,
+                onClick = onOpenLogin,
+                compact = compact
+            )
+            AuthEntryOptionCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Outlined.PersonAddAlt1,
+                title = stringResource(R.string.auth_entry_register_title),
+                description = stringResource(R.string.auth_entry_register_description),
+                actionText = stringResource(R.string.auth_entry_register_action),
+                badgeText = stringResource(R.string.auth_entry_register_badge),
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                accentColor = MaterialTheme.colorScheme.tertiary,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                enabled = enabled,
+                onClick = onOpenRegister,
+                compact = compact
+            )
+        }
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.appSpacing.sm)) {
+            AuthEntryOptionCard(
+                icon = Icons.Outlined.Lock,
+                title = stringResource(R.string.auth_entry_login_title),
+                description = stringResource(R.string.auth_entry_login_description),
+                actionText = stringResource(R.string.auth_entry_login_action),
+                badgeText = stringResource(R.string.auth_entry_login_badge),
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                accentColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                enabled = enabled,
+                onClick = onOpenLogin,
+                compact = compact
+            )
+            AuthEntryOptionCard(
+                icon = Icons.Outlined.PersonAddAlt1,
+                title = stringResource(R.string.auth_entry_register_title),
+                description = stringResource(R.string.auth_entry_register_description),
+                actionText = stringResource(R.string.auth_entry_register_action),
+                badgeText = stringResource(R.string.auth_entry_register_badge),
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                accentColor = MaterialTheme.colorScheme.tertiary,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                enabled = enabled,
+                onClick = onOpenRegister,
+                compact = compact
+            )
         }
     }
 }
