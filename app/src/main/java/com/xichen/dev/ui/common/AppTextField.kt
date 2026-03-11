@@ -1,5 +1,11 @@
 package com.xichen.dev.ui.common
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,7 +21,9 @@ fun AppTextField(
     modifier: Modifier = Modifier,
     errorText: UiText? = null,
     singleLine: Boolean = true,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
+    leadingContent: (@Composable () -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null
 ) {
     OutlinedTextField(
@@ -25,7 +33,11 @@ fun AppTextField(
         label = { Text(text = label) },
         singleLine = singleLine,
         isError = errorText != null,
+        keyboardOptions = keyboardOptions,
         visualTransformation = visualTransformation,
+        leadingIcon = {
+            leadingContent?.invoke()
+        },
         trailingIcon = {
             trailingContent?.invoke()
         },
@@ -45,7 +57,9 @@ fun AppPasswordField(
     showPasswordLabel: String,
     hidePasswordLabel: String,
     modifier: Modifier = Modifier,
-    errorText: UiText? = null
+    errorText: UiText? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    leadingContent: (@Composable () -> Unit)? = null
 ) {
     AppTextField(
         value = value,
@@ -53,16 +67,24 @@ fun AppPasswordField(
         label = label,
         modifier = modifier,
         errorText = errorText,
+        keyboardOptions = keyboardOptions,
         visualTransformation = if (visible) {
             VisualTransformation.None
         } else {
             PasswordVisualTransformation()
         },
+        leadingContent = leadingContent,
         trailingContent = {
-            AppSecondaryButton(
-                text = if (visible) hidePasswordLabel else showPasswordLabel,
-                onClick = onToggleVisibility
-            )
+            IconButton(onClick = onToggleVisibility) {
+                Icon(
+                    imageVector = if (visible) {
+                        Icons.Outlined.VisibilityOff
+                    } else {
+                        Icons.Outlined.Visibility
+                    },
+                    contentDescription = if (visible) hidePasswordLabel else showPasswordLabel
+                )
+            }
         }
     )
 }

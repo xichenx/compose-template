@@ -15,6 +15,7 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.xichen.dev.ui.feature.authentry.AuthEntryRoute
 import com.xichen.dev.ui.feature.home.HomeRoute
 import com.xichen.dev.ui.feature.login.LoginRoute
 import com.xichen.dev.ui.feature.register.RegisterRoute
@@ -39,7 +40,7 @@ fun AppNavHost(
         composable(AppRoute.Splash.route) {
             SplashRoute(
                 onNavigateToLogin = {
-                    navController.navigate(AppRoute.Login.route) {
+                    navController.navigate(AppRoute.AuthEntry.route) {
                         popUpTo(AppRoute.Splash.route) { inclusive = true }
                         launchSingleTop = true
                     }
@@ -56,7 +57,21 @@ fun AppNavHost(
             HomeRoute(
                 windowSizeClass = windowSizeClass,
                 onNavigateToLogin = {
-                    navController.navigate(AppRoute.Login.route)
+                    navController.navigate(AppRoute.AuthEntry.route)
+                }
+            )
+        }
+        composable(AppRoute.AuthEntry.route) {
+            AuthEntryRoute(
+                onNavigateToLogin = {
+                    navController.navigate(AppRoute.Login.route) {
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToRegister = {
+                    navController.navigate(AppRoute.Register.route) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -70,7 +85,7 @@ fun AppNavHost(
                 },
                 onNavigateToHome = {
                     navController.navigate(AppRoute.Home.route) {
-                        popUpTo(AppRoute.Login.route) { inclusive = true }
+                        popUpTo(AppRoute.AuthEntry.route) { inclusive = true }
                         launchSingleTop = true
                     }
                 }
@@ -83,7 +98,7 @@ fun AppNavHost(
                 },
                 onNavigateToHome = {
                     navController.navigate(AppRoute.Home.route) {
-                        popUpTo(AppRoute.Register.route) { inclusive = true }
+                        popUpTo(AppRoute.AuthEntry.route) { inclusive = true }
                         launchSingleTop = true
                     }
                 }

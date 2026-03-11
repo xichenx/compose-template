@@ -49,10 +49,12 @@ fun AppSecondaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    fillMaxWidth: Boolean = false
+    fillMaxWidth: Boolean = false,
+    enabled: Boolean = true
 ) {
     TextButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = if (fillMaxWidth) modifier.fillMaxWidth() else modifier
     ) {
         Text(
