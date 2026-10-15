@@ -1,0 +1,6 @@
+{
+  "name": "Compose Template",
+  "description": "Compose MVI Scaffold application rewritten in React with bilingual support, responsive Material 3 design, and client-side session management.",
+  "permissions": [],
+  "capabilities": []
+}
