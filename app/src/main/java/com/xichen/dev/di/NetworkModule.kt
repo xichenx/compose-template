@@ -1,5 +1,6 @@
 package com.xichen.dev.di
 
+import com.xichen.dev.BuildConfig
 import com.xichen.dev.data.remote.api.AuthApiService
 import com.xichen.dev.data.remote.api.ScaffoldApiService
 import dagger.Module
@@ -20,7 +21,11 @@ object NetworkModule {
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor {
         return HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BASIC
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BASIC
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
     }
 

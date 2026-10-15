@@ -20,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.xichen.dev.ui.common.ErrorContent
 import com.xichen.dev.ui.common.asString
 import com.xichen.dev.ui.theme.ComposetemplateTheme
 
@@ -45,14 +46,23 @@ fun SplashRoute(
         }
     }
 
-    SplashScreen(state = state, modifier = modifier)
+    SplashScreen(
+        state = state,
+        modifier = modifier,
+        onRetry = { viewModel.onIntent(SplashIntent.CheckSession) }
+    )
 }
 
 @Composable
 fun SplashScreen(
     state: SplashState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onRetry: () -> Unit = {}
 ) {
+    state.errorMessage?.let { error ->
+        ErrorContent(message = error, onRetry = onRetry, modifier = modifier.fillMaxSize())
+        return
+    }
     Box(
         modifier = modifier
             .fillMaxSize()

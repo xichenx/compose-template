@@ -1,7 +1,7 @@
 package com.xichen.dev.data.repository
 
 import com.xichen.dev.core.coroutine.AppDispatchers
-import com.xichen.dev.data.common.toAppError
+import com.xichen.dev.data.common.appResultOf
 import com.xichen.dev.data.local.datastore.AuthSessionDataSource
 import com.xichen.dev.data.remote.datasource.AuthRemoteDataSource
 import com.xichen.dev.data.remote.mapper.toDomain
@@ -21,17 +21,12 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun login(email: String, password: String): AppResult<LoginSession> {
         return withContext(dispatchers.io) {
-            runCatching {
+            appResultOf {
                 val session = authRemoteDataSource.login(
-                    LoginRequestDto(
-                        email = email,
-                        password = password
-                    )
+                    LoginRequestDto(email = email, password = password)
                 ).toDomain()
                 authSessionDataSource.saveSession(session)
-                AppResult.Success(session)
-            }.getOrElse { throwable ->
-                AppResult.Error(throwable.toAppError())
+                session
             }
         }
     }
@@ -42,40 +37,37 @@ class AuthRepositoryImpl @Inject constructor(
         password: String
     ): AppResult<LoginSession> {
         return withContext(dispatchers.io) {
-            runCatching {
+            appResultOf {
                 val session = authRemoteDataSource.register(
-                    RegisterRequestDto(
-                        displayName = displayName,
-                        email = email,
-                        password = password
-                    )
+                    RegisterRequestDto(displayName = displayName, email = email, password = password)
                 ).toDomain()
                 authSessionDataSource.saveSession(session)
-                AppResult.Success(session)
-            }.getOrElse { throwable ->
-                AppResult.Error(throwable.toAppError())
+                session
             }
         }
     }
 
-    override suspend fun getCachedSession(): LoginSession? {
+    override suspend fun getCachedSession(): AppResult<LoginSession?> {
         return withContext(dispatchers.io) {
-            val cached = authSessionDataSource.getSession()
-            if (!cached.isLoggedIn) {
-                return@withContext null
+            appResultOf {
+                val cached = authSessionDataSource.getSession()
+                if (!cached.isLoggedIn) {
+                    null
+                } else {
+                    LoginSession(
+                        userId = cached.userId.orEmpty(),
+                        displayName = cached.displayName.orEmpty(),
+                        email = cached.email.orEmpty(),
+                        token = cached.token.orEmpty()
+                    )
+                }
             }
-            LoginSession(
-                userId = cached.userId.orEmpty(),
-                displayName = cached.displayName.orEmpty(),
-                email = cached.email.orEmpty(),
-                token = cached.token.orEmpty()
-            )
         }
     }
 
-    override suspend fun clearSession() {
-        withContext(dispatchers.io) {
-            authSessionDataSource.clearSession()
+    override suspend fun clearSession(): AppResult<Unit> {
+        return withContext(dispatchers.io) {
+            appResultOf { authSessionDataSource.clearSession() }
         }
     }
 }

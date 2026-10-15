@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.xichen.dev.data.local.entity.ScaffoldHighlightEntity
 
 @Dao
@@ -16,4 +17,10 @@ interface ScaffoldHighlightDao {
 
     @Query("DELETE FROM scaffold_highlight")
     suspend fun clearAll()
+
+    @Transaction
+    suspend fun replaceAll(items: List<ScaffoldHighlightEntity>) {
+        clearAll()
+        upsertAll(items)
+    }
 }

@@ -9,7 +9,6 @@ class InitializeAppLanguageUseCase @Inject constructor(
     private val languageRepository: LanguageRepository
 ) : BaseSuspendNoParamsUseCase<Unit>() {
     override suspend fun execute(): AppResult<Unit> {
-        languageRepository.initializeAppLanguage()
-        return AppResult.Success(Unit)
+        return languageRepository.initializeAppLanguage()
     }
 }

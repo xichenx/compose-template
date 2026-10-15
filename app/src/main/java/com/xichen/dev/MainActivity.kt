@@ -11,9 +11,11 @@ import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xichen.dev.data.local.datastore.LanguagePreferencesDataSource
 import com.xichen.dev.data.localization.AppLanguageManager
+import com.xichen.dev.domain.model.AppLanguage
 import com.xichen.dev.ui.navigation.AppNavHost
 import com.xichen.dev.ui.theme.ComposetemplateTheme
 import dagger.hilt.android.AndroidEntryPoint
+import java.io.IOException
 import kotlinx.coroutines.runBlocking
 
 @AndroidEntryPoint
@@ -22,8 +24,11 @@ class MainActivity : ComponentActivity() {
 
     override fun attachBaseContext(newBase: Context) {
         val appLanguageManager = AppLanguageManager(newBase.applicationContext)
-        val language = runBlocking {
-            LanguagePreferencesDataSource.read(newBase.applicationContext)
+        // Keep the saved language on the first frame; a full async locale migration is separate.
+        val language = try {
+            runBlocking { LanguagePreferencesDataSource.read(newBase.applicationContext) }
+        } catch (exception: IOException) {
+            AppLanguage.default
         }
         super.attachBaseContext(appLanguageManager.wrapContext(newBase, language))
     }

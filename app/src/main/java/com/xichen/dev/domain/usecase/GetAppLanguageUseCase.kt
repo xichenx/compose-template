@@ -10,6 +10,6 @@ class GetAppLanguageUseCase @Inject constructor(
     private val languageRepository: LanguageRepository
 ) : BaseSuspendNoParamsUseCase<AppLanguage>() {
     override suspend fun execute(): AppResult<AppLanguage> {
-        return AppResult.Success(languageRepository.getAppLanguage())
+        return languageRepository.getAppLanguage()
     }
 }

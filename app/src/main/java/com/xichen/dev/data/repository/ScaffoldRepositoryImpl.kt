@@ -1,7 +1,7 @@
 package com.xichen.dev.data.repository
 
 import com.xichen.dev.core.coroutine.AppDispatchers
-import com.xichen.dev.data.common.toAppError
+import com.xichen.dev.data.common.appResultOf
 import com.xichen.dev.data.local.datasource.ScaffoldLocalDataSource
 import com.xichen.dev.data.local.datastore.ScaffoldPreferencesDataSource
 import com.xichen.dev.data.local.mapper.toDomain
@@ -29,23 +29,25 @@ class ScaffoldRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getScaffoldSummary(forceRefresh: Boolean): AppResult<ScaffoldSummary> {
-        return withContext(dispatchers.io) {
-            runCatching {
+        val result = withContext(dispatchers.io) {
+            appResultOf {
                 val cachedHighlights = localDataSource.getHighlights()
                 if (cachedHighlights.isNotEmpty() && !forceRefresh) {
                     val preferences = preferencesDataSource.getPreferences()
-                    return@withContext AppResult.Success(
-                        data = ScaffoldSummary(
-                            highlights = cachedHighlights.map { entity -> entity.toDomain() },
-                            lastUpdatedAtMillis = preferences.lastUpdatedAtMillis,
-                            hasCompletedSetupGuide = preferences.hasSeenSetupGuide
-                        )
+                    return@appResultOf ScaffoldSummary(
+                        highlights = cachedHighlights.map { entity -> entity.toDomain() },
+                        lastUpdatedAtMillis = preferences.lastUpdatedAtMillis,
+                        hasCompletedSetupGuide = preferences.hasSeenSetupGuide
                     )
                 }
 
                 val remoteHighlights = remoteDataSource.fetchHighlights().map { dto -> dto.toDomain() }
                 if (remoteHighlights.isEmpty()) {
-                    return@withContext AppResult.Error(AppError.EmptyData)
+                    return@appResultOf ScaffoldSummary(
+                        highlights = emptyList(),
+                        lastUpdatedAtMillis = null,
+                        hasCompletedSetupGuide = false
+                    )
                 }
 
                 val updatedAtMillis = System.currentTimeMillis()
@@ -56,28 +58,29 @@ class ScaffoldRepositoryImpl @Inject constructor(
                 preferencesDataSource.markSetupGuideAsSeen()
                 val preferences = preferencesDataSource.getPreferences()
 
-                AppResult.Success(
-                    data = ScaffoldSummary(
-                        highlights = remoteHighlights,
-                        lastUpdatedAtMillis = preferences.lastUpdatedAtMillis,
-                        hasCompletedSetupGuide = preferences.hasSeenSetupGuide
-                    )
+                ScaffoldSummary(
+                    highlights = remoteHighlights,
+                    lastUpdatedAtMillis = preferences.lastUpdatedAtMillis,
+                    hasCompletedSetupGuide = preferences.hasSeenSetupGuide
                 )
-            }.getOrElse { throwable ->
-                AppResult.Error(throwable.toAppError())
             }
         }
-    }
-
-    override suspend fun markSetupGuideAsSeen() {
-        withContext(dispatchers.io) {
-            preferencesDataSource.markSetupGuideAsSeen()
+        return if (result is AppResult.Success && result.data.highlights.isEmpty()) {
+            AppResult.Error(AppError.EmptyData)
+        } else {
+            result
         }
     }
 
-    override suspend fun updateAppThemeMode(themeMode: AppThemeMode) {
-        withContext(dispatchers.io) {
-            preferencesDataSource.updateAppThemeMode(themeMode)
+    override suspend fun markSetupGuideAsSeen(): AppResult<Unit> {
+        return withContext(dispatchers.io) {
+            appResultOf { preferencesDataSource.markSetupGuideAsSeen() }
+        }
+    }
+
+    override suspend fun updateAppThemeMode(themeMode: AppThemeMode): AppResult<Unit> {
+        return withContext(dispatchers.io) {
+            appResultOf { preferencesDataSource.updateAppThemeMode(themeMode) }
         }
     }
 }

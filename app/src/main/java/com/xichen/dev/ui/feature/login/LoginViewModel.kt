@@ -6,7 +6,7 @@ import com.xichen.dev.domain.model.onSuccess
 import com.xichen.dev.domain.usecase.LoginParams
 import com.xichen.dev.domain.usecase.LoginUseCase
 import com.xichen.dev.domain.validation.AuthValidator
-import com.xichen.dev.domain.validation.ValidationResult
+import com.xichen.dev.ui.common.auth.toUiTextOrNull
 import com.xichen.dev.ui.common.UiText
 import com.xichen.dev.ui.common.asUiText
 import com.xichen.dev.ui.mvi.BaseViewModel
@@ -125,12 +125,5 @@ class LoginViewModel @Inject constructor(
             copy(successMessage = null)
         }
         sendEffect { LoginEffect.NavigateToHome }
-    }
-
-    private fun ValidationResult.toUiTextOrNull(): UiText? {
-        return when (this) {
-            ValidationResult.Valid -> null
-            is ValidationResult.Invalid -> message
-        }
     }
 }

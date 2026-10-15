@@ -2,6 +2,9 @@ package com.xichen.dev.ui.common.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -133,6 +136,8 @@ fun AuthScreenScaffold(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
+                        .imePadding()
+                        .verticalScroll(rememberScrollState())
                         .padding(
                             start = horizontalPadding,
                             end = horizontalPadding,

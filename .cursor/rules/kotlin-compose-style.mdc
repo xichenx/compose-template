@@ -8,7 +8,7 @@ description: Kotlin and Compose coding constraints for this scaffold
 
 - 优先保持函数单一职责，避免超长函数。
 - Compose 组件默认优先无状态设计，通过参数接收 `state` 和回调。
-- Screen 负责收集状态、分发 intent、消费 effect。
+- Route 负责收集状态、分发 Intent、消费 Effect；Screen 保持无状态渲染。
 - ViewModel 不直接持有 `NavController`、`Context`、`SnackbarHostState` 等 UI 对象。
 - 不在 Composable 中直接发起复杂业务请求，初始化动作通过 `LaunchedEffect` + intent 触发。
 - 所有状态使用不可变 `data class`。
@@ -20,6 +20,8 @@ description: Kotlin and Compose coding constraints for this scaffold
 
 - 列表默认使用 `LazyColumn` 或 `LazyVerticalGrid`。
 - 使用 `collectAsStateWithLifecycle` 收集页面状态。
+- 表单需支持短视口纵向滚动并处理 IME Insets；搜索空态仍保留输入和筛选控件。
+- 新增功能至少补成功、失败、重试的状态测试；涉及 suspend 错误边界时补取消传播测试。
 - 复杂参数或派生状态优先使用 `remember` 和 `derivedStateOf`。
 - 预览函数和实际页面分离，避免预览依赖真实 ViewModel。
 

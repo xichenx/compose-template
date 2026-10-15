@@ -12,7 +12,6 @@ class ScaffoldLocalDataSource @Inject constructor(
     }
 
     suspend fun replaceHighlights(items: List<ScaffoldHighlightEntity>) {
-        scaffoldHighlightDao.clearAll()
-        scaffoldHighlightDao.upsertAll(items)
+        scaffoldHighlightDao.replaceAll(items)
     }
 }

@@ -62,15 +62,15 @@
 ```kotlin
 data class DemoState(
     val isLoading: Boolean = false,
-    val errorMessage: String? = null,
+    val errorMessage: UiText? = null,
     val items: List<String> = emptyList()
-)
+) : UiState
 ```
 
 ### 5.2 Intent Template
 
 ```kotlin
-sealed interface DemoIntent {
+sealed interface DemoIntent : UiIntent {
     data object Initialize : DemoIntent
     data object Refresh : DemoIntent
     data class ItemClick(val id: String) : DemoIntent
@@ -80,28 +80,21 @@ sealed interface DemoIntent {
 ### 5.3 Effect Template
 
 ```kotlin
-sealed interface DemoEffect {
+sealed interface DemoEffect : UiEffect {
     data class Navigate(val route: String) : DemoEffect
-    data class Toast(val message: String) : DemoEffect
+    data class ShowMessage(val message: UiText) : DemoEffect
 }
 ```
 
 ### 5.4 ViewModel Template
 
 ```kotlin
-class DemoViewModel : ViewModel() {
-
-    private val _state = MutableStateFlow(DemoState())
-    val state: StateFlow<DemoState> = _state.asStateFlow()
-
-    private val _effect = Channel<DemoEffect>(Channel.BUFFERED)
-    val effect = _effect.receiveAsFlow()
-
+class DemoViewModel : BaseViewModel<DemoState, DemoEffect>(DemoState()) {
     fun onIntent(intent: DemoIntent) {
         when (intent) {
             DemoIntent.Initialize -> {}
             DemoIntent.Refresh -> {}
-            is DemoIntent.ItemClick -> {}
+            is DemoIntent.ItemClick -> sendEffect { DemoEffect.Navigate("detail/${intent.id}") }
         }
     }
 }
@@ -134,6 +127,13 @@ class DemoViewModel : ViewModel() {
 - 不把一次性事件放入可持久状态。
 - 不在模块内硬编码依赖版本。
 - 不为了快速交付破坏项目分层。
+- 一次性仓库操作返回 `AppResult<T>`，平台异常映射放 data 层，UseCase 不重复包装结果。
+- 复用 `appResultOf`，重新抛出协程取消；不吞 `CancellationException`。
+- 领域校验返回错误类型，由 UI 映射成 `UiText`，不让 domain 引用 `R`。
+- 初始化先标记加载状态，刷新失败保留内容；空态保留搜索/筛选操作。
+- Room 删除并插入必须事务化；认证表单需滚动/IME 适配。
+- 新功能补成功、失败、重试测试；设备测试只在实际运行后报告通过。
+- 默认数据源为 Mock，不能把 API 依赖、测试编译或备份排除当作真实认证/设备验收/加密存储。
 
 ## 8. Related Assets
 

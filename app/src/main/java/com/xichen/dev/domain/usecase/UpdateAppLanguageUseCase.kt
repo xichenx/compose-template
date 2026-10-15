@@ -10,7 +10,6 @@ class UpdateAppLanguageUseCase @Inject constructor(
     private val languageRepository: LanguageRepository
 ) : BaseSuspendUseCase<AppLanguage, Unit>() {
     override suspend fun execute(params: AppLanguage): AppResult<Unit> {
-        languageRepository.updateAppLanguage(params)
-        return AppResult.Success(Unit)
+        return languageRepository.updateAppLanguage(params)
     }
 }

@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface ScaffoldRepository {
     suspend fun getScaffoldSummary(forceRefresh: Boolean = false): AppResult<ScaffoldSummary>
-    suspend fun markSetupGuideAsSeen()
+    suspend fun markSetupGuideAsSeen(): AppResult<Unit>
     fun observeAppThemeMode(): Flow<AppThemeMode>
-    suspend fun updateAppThemeMode(themeMode: AppThemeMode)
+    suspend fun updateAppThemeMode(themeMode: AppThemeMode): AppResult<Unit>
 }
