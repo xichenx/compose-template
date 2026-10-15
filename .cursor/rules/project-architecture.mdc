@@ -1,0 +1,30 @@
+---
+alwaysApply: true
+---
+# Compose MVI Project Architecture
+
+本项目是一个基于 Jetpack Compose 的 Android 脚手架，默认采用 `MVI + Clean Architecture`。
+
+## Single Source Of Truth
+
+- 所有 UI 都由 `StateFlow` 驱动。
+- 单次事件统一通过 `Effect` 分发，不直接把导航或 Toast 写进状态。
+- View 只负责渲染和转发用户行为，不承载业务逻辑。
+
+## Layer Rules
+
+- `ui` 只依赖 `domain`，不要直接依赖 `data` 实现。
+- `domain` 放接口、模型和 use case，不放 Android 细节。
+- `data` 负责远端、本地、仓库实现和模型转换。
+- 通用能力优先沉淀到公共层，不要在 feature 内重复造轮子。
+
+## Feature Rules
+
+- 新功能统一放在 `app/src/main/java/com/xichen/dev/ui/feature/<feature>`。
+- 每个 feature 至少包含 `Screen`、`ViewModel`、`State`、`Intent`，需要一次性事件时增加 `Effect`。
+- 组件优先拆成无状态 Composable，再由 Screen 负责组装。
+
+## References
+
+- 架构总设计见 [DESIGN_DOCUMENT.md](mdc:DESIGN_DOCUMENT.md)
+- 执行计划见 [DEVELOPMENT_PLAN.md](mdc:DEVELOPMENT_PLAN.md)

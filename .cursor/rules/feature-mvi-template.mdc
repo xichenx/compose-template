@@ -1,0 +1,53 @@
+---
+alwaysApply: false
+description: Generate a new feature module with the project's MVI template
+---
+# Feature MVI Template
+
+当需要新增业务模块时，默认按以下模板生成：
+
+## Target Path
+
+- `app/src/main/java/com/xichen/dev/ui/feature/<feature>/`
+
+## Required Files
+
+- `<Feature>Screen.kt`
+- `<Feature>ViewModel.kt`
+- `<Feature>State.kt`
+- `<Feature>Intent.kt`
+- `<Feature>Effect.kt`
+
+如果模块存在复杂列表或局部组件，再增加 `component/` 目录。
+
+## State Contract
+
+- `State` 只保存渲染页面所需的数据。
+- 通用字段优先包含 `isLoading`、`errorMessage`、`isEmpty`。
+- 不把导航、Toast、Dialog 这类一次性事件塞进状态。
+
+## ViewModel Contract
+
+- 对外暴露 `StateFlow<State>`。
+- 对外暴露 `Flow<Effect>`。
+- 统一通过 `onIntent(intent)` 或 `handleIntent(intent)` 处理用户动作。
+- 状态变更必须通过 reducer 或 `copy()` 完成。
+
+## Screen Contract
+
+- Screen 负责收集状态并绑定事件。
+- 首次加载使用 `LaunchedEffect(Unit)` 派发初始化 intent。
+- 导航、Toast 等 effect 在 Screen 层消费。
+- 复杂 UI 拆到 `component/` 下，保持 Screen 简洁。
+
+## Domain Contract
+
+- 如果该 feature 涉及业务逻辑，优先补充对应 use case。
+- Screen 不直接调用 repository。
+- ViewModel 优先依赖 use case，而不是直接依赖 data 层实现。
+
+## References
+
+- 项目架构见 [project-architecture.mdc](mdc:.cursor/rules/project-architecture.mdc)
+- 编码规则见 [kotlin-compose-style.mdc](mdc:.cursor/rules/kotlin-compose-style.mdc)
+- 详细设计见 [DESIGN_DOCUMENT.md](mdc:DESIGN_DOCUMENT.md)
