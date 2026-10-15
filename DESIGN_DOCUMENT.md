@@ -1,562 +1,145 @@
-# Compose MVI 架构脚手架 - 详细设计文档
+# Compose MVI 脚手架设计
 
-## 1. 项目概述
+## 1. 定位与范围
 
-### 1.1 项目目标
-创建一个基于 Jetpack Compose 和 MVI（Model-View-Intent）架构的 Android 项目脚手架，旨在：
-- 提供标准化的项目结构和代码组织方式
-- 减少新项目的前期配置工作
-- 实现清晰的数据流和状态管理
-- 支持快速开发和迭代
-- 遵循 Android 开发最佳实践
+本项目是原生 Android **单模块 Compose + Material 3 + MVI + Clean Architecture 分包**脚手架，用认证和首页示例演示可复制的数据流。
 
-### 1.2 核心特性
-- ✅ **MVI 架构模式**：单向数据流，状态可预测
-- ✅ **Jetpack Compose**：现代化 UI 开发
-- ✅ **依赖注入**：使用 Hilt/Dagger
-- ✅ **网络请求**：Retrofit + OkHttp
-- ✅ **本地存储**：Room + DataStore
-- ✅ **异步处理**：Kotlin Coroutines + Flow
-- ✅ **导航管理**：Navigation Compose
-- ✅ **主题系统**：Material 3 动态颜色
-- ✅ **错误处理**：统一异常处理机制
-- ✅ **日志系统**：结构化日志记录
-- ✅ **单元测试**：完整的测试框架
+已实现：Hilt、导航、轻量 MVI、Room 缓存、DataStore 偏好和会话、主题、语言切换、类型化校验、失败反馈与重试，以及 JVM/Android 测试样例。
 
-## 2. 架构设计
+**未实现：**真实后端认证、Token 刷新、持久化演示账号、端到端分页、模块级依赖隔离、CI 和监控。Retrofit/OkHttp 已配置，但远端数据源仍返回 Mock 数据，不能以“已接依赖”代替“业务已接入”。
 
-### 2.1 MVI 架构模式
+## 2. 技术与构建
 
-MVI（Model-View-Intent）是一种响应式架构模式，具有以下特点：
+| 技术 | 当前配置 |
+|------|----------|
+| Kotlin / Compose Compiler 插件 | 2.0.21 |
+| AGP / Gradle Wrapper | 8.12.3 / 8.13 |
+| Android SDK | min 24，compile/target 36 |
+| Gradle 运行时 / 源码 JVM target | JDK 17 / 11 |
+| Compose BOM | 2024.09.03 |
+| Lifecycle / Navigation Compose | 2.8.7 / 2.8.6 |
+| Hilt | 2.52 |
+| Retrofit / OkHttp | 2.11.0 / 4.12.0 |
+| Room / Preferences DataStore | 2.6.1 / 1.1.1 |
+| Coroutines / coroutines-test | 1.9.0 |
+| 单测 | JUnit 4.13.2、MockK 1.13.13 |
+| Android 测试 | AndroidJUnit4、Compose Testing |
 
-```
-Intent (用户意图) → ViewModel (处理逻辑) → State (状态) → View (UI)
-```
+依赖版本以 `gradle/libs.versions.toml` 为准。本轮保留已验证的版本组合，不全面升级。Coil、Timber、LeakCanary 和 Turbine 尚未接入。
 
-#### 2.1.1 核心组件
+## 3. 分层与边界
 
-1. **Intent（意图）**
-   - 用户操作（点击、输入等）
-   - 系统事件（生命周期、网络状态等）
-   - 内部事件（定时器、后台任务等）
+代码根目录：`app/src/main/java/com/xichen/dev/`。
 
-2. **Model（模型）**
-   - UI State：界面状态
-   - Side Effect：副作用（导航、Toast、Dialog 等）
+- `ui/`：State、Intent、Effect、ViewModel、Route、Screen、组件、资源映射和设计参数。
+- `domain/`：领域模型、仓库接口、UseCase、纯类型化校验。不引用 UI 类型、`R`、Context 或 Retrofit。
+- `data/`：远端、本地数据源、DTO/Entity Mapper、仓库实现、平台异常映射和语言资源管理。
+- `di/`：依赖组装；`core/coroutine/AppDispatchers.kt`：可注入调度器。
+- `MainActivity` 是平台入口，语言 Context 包装属于入口适配，不能由 feature Composable 直接调用 data 层。
 
-3. **View（视图）**
-   - Compose UI 组件
-   - 观察 State 并响应变化
-   - 发送 Intent 到 ViewModel
+这是单模块分包约束，不是 Gradle 编译期隔离。业务增长后可据此拆模块，不为当前示例增加多余抽象。
 
-4. **ViewModel**
-   - 处理 Intent
-   - 管理 State
-   - 执行业务逻辑
-   - 触发 Side Effect
+## 4. 状态与副作用
 
-### 2.2 架构分层
-
-```
-┌─────────────────────────────────────┐
-│         Presentation Layer          │
-│  (UI Components, ViewModels, State) │
-┌─────────────────────────────────────┐
-│          Domain Layer               │
-│    (Use Cases, Business Logic)      │
-┌─────────────────────────────────────┐
-│           Data Layer                │
-│  (Repository, DataSource, Models)   │
-┌─────────────────────────────────────┐
+```text
+Intent → ViewModel → UseCase → Repository → 数据源
+             ↓
+         StateFlow → Screen 渲染
+             ↓
+          Effect → Route 消费导航/提示
 ```
 
-#### 2.2.1 Presentation Layer（表现层）
-- **UI Components**：Compose 可组合函数
-- **ViewModels**：状态管理和业务逻辑处理
-- **State**：UI 状态数据类
-- **Intent**：用户意图密封类
-
-#### 2.2.2 Domain Layer（领域层）
-- **Use Cases**：单一职责的业务用例
-- **Entities**：领域模型
-- **Interfaces**：Repository 接口定义
-
-#### 2.2.3 Data Layer（数据层）
-- **Repository**：数据仓库实现
-- **Remote DataSource**：网络数据源
-- **Local DataSource**：本地数据源（Room、DataStore）
-- **DTOs**：数据传输对象
-
-## 3. 技术栈
-
-### 3.1 核心框架
-
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| Kotlin | 2.0.21+ | 开发语言 |
-| Jetpack Compose | 2024.09.00+ | UI 框架 |
-| Material 3 | Latest | 设计系统 |
-| AndroidX Core | Latest | 核心库 |
-
-### 3.2 架构组件
-
-| 组件 | 版本 | 用途 |
-|------|------|------|
-| ViewModel | 2.8.6+ | 状态管理 |
-| Lifecycle | 2.8.6+ | 生命周期感知 |
-| Navigation Compose | 2.8.6+ | 导航管理 |
-| Hilt | 2.52+ | 依赖注入 |
-
-### 3.3 网络与数据
-
-| 库 | 版本 | 用途 |
-|----|------|------|
-| Retrofit | 2.11.0+ | REST API 客户端 |
-| OkHttp | 4.12.0+ | HTTP 客户端 |
-| Gson/Moshi | Latest | JSON 序列化 |
-| Room | 2.6.1+ | 本地数据库 |
-| DataStore | 1.1.1+ | 键值对存储 |
-
-### 3.4 异步处理
-
-| 库 | 版本 | 用途 |
-|----|------|------|
-| Kotlin Coroutines | 1.9.0+ | 协程支持 |
-| Kotlin Flow | 1.9.0+ | 响应式流 |
-
-### 3.5 工具库
-
-| 库 | 版本 | 用途 |
-|----|------|------|
-| Coil | 2.7.0+ | 图片加载 |
-| Timber | 5.0.1 | 日志记录 |
-| LeakCanary | 2.14 | 内存泄漏检测（Debug） |
-
-### 3.6 测试框架
-
-| 库 | 版本 | 用途 |
-|----|------|------|
-| JUnit | 4.13.2+ | 单元测试 |
-| Mockito | 5.11.0+ | Mock 框架 |
-| Turbine | 1.1.0 | Flow 测试 |
-| Compose Testing | Latest | UI 测试 |
-
-## 4. 项目结构
-
-### 4.1 目录结构
-
-```
-app/
-├── src/
-│   ├── main/
-│   │   ├── java/com/xichen/dev/
-│   │   │   ├── di/                    # 依赖注入模块
-│   │   │   │   ├── AppModule.kt
-│   │   │   │   ├── DatabaseModule.kt
-│   │   │   │   ├── NetworkModule.kt
-│   │   │   │   └── RepositoryModule.kt
-│   │   │   │
-│   │   │   ├── data/                  # 数据层
-│   │   │   │   ├── local/             # 本地数据源
-│   │   │   │   │   ├── database/      # Room 数据库
-│   │   │   │   │   │   ├── AppDatabase.kt
-│   │   │   │   │   │   └── dao/       # DAO 接口
-│   │   │   │   │   ├── datastore/     # DataStore
-│   │   │   │   │   │   └── PreferencesManager.kt
-│   │   │   │   │   └── entity/        # 数据库实体
-│   │   │   │   │
-│   │   │   │   ├── remote/            # 远程数据源
-│   │   │   │   │   ├── api/           # API 接口
-│   │   │   │   │   │   └── ApiService.kt
-│   │   │   │   │   ├── dto/           # 数据传输对象
-│   │   │   │   │   └── mapper/        # DTO 到 Entity 映射
-│   │   │   │   │
-│   │   │   │   ├── repository/        # 数据仓库实现
-│   │   │   │   │   └── RepositoryImpl.kt
-│   │   │   │   │
-│   │   │   │   └── model/             # 数据模型
-│   │   │   │
-│   │   │   ├── domain/                # 领域层
-│   │   │   │   ├── model/             # 领域模型
-│   │   │   │   ├── repository/        # Repository 接口
-│   │   │   │   └── usecase/           # 用例
-│   │   │   │       └── GetDataUseCase.kt
-│   │   │   │
-│   │   │   ├── ui/                    # 表现层
-│   │   │   │   ├── theme/             # 主题配置
-│   │   │   │   │   ├── Color.kt
-│   │   │   │   │   ├── Type.kt
-│   │   │   │   │   └── Theme.kt
-│   │   │   │   │
-│   │   │   │   ├── navigation/        # 导航配置
-│   │   │   │   │   ├── NavGraph.kt
-│   │   │   │   │   └── Screen.kt
-│   │   │   │   │
-│   │   │   │   ├── common/            # 通用 UI 组件
-│   │   │   │   │   ├── LoadingIndicator.kt
-│   │   │   │   │   ├── ErrorView.kt
-│   │   │   │   │   └── EmptyView.kt
-│   │   │   │   │
-│   │   │   │   └── feature/           # 功能模块
-│   │   │   │       └── home/          # 示例：首页模块
-│   │   │   │           ├── HomeScreen.kt
-│   │   │   │           ├── HomeViewModel.kt
-│   │   │   │           ├── HomeState.kt
-│   │   │   │           ├── HomeIntent.kt
-│   │   │   │           └── component/ # 功能内组件
-│   │   │   │
-│   │   │   ├── util/                  # 工具类
-│   │   │   │   ├── Constants.kt
-│   │   │   │   ├── Extensions.kt
-│   │   │   │   └── Logger.kt
-│   │   │   │
-│   │   │   └── MainActivity.kt
-│   │   │
-│   │   └── res/                       # 资源文件
-│   │
-│   ├── test/                          # 单元测试
-│   │   └── java/com/xichen/dev/
-│   │       ├── domain/
-│   │       ├── data/
-│   │       └── ui/
-│   │
-│   └── androidTest/                   # 集成测试
-│       └── java/com/xichen/dev/
-│
-├── build.gradle.kts
-└── proguard-rules.pro
-```
-
-## 5. 核心模块设计
-
-### 5.1 MVI 状态管理
-
-#### 5.1.1 State 设计
-
-```kotlin
-// 基础 UI 状态接口
-interface UiState {
-    val isLoading: Boolean
-    val error: String?
-}
-
-// 具体功能状态
-data class HomeState(
-    override val isLoading: Boolean = false,
-    override val error: String? = null,
-    val data: List<Item> = emptyList(),
-    val isRefreshing: Boolean = false
-) : UiState
-```
-
-#### 5.1.2 Intent 设计
-
-```kotlin
-// 基础 Intent 接口
-sealed interface UiIntent
-
-// 具体功能 Intent
-sealed interface HomeIntent : UiIntent {
-    data object LoadData : HomeIntent
-    data object Refresh : HomeIntent
-    data class OnItemClick(val id: String) : HomeIntent
-}
-```
-
-#### 5.1.3 Side Effect 设计
-
-```kotlin
-// 副作用（导航、Toast 等）
-sealed interface UiSideEffect {
-    data class NavigateTo(val route: String) : UiSideEffect
-    data class ShowToast(val message: String) : UiSideEffect
-    data class ShowDialog(val dialog: DialogData) : UiSideEffect
-}
-```
-
-#### 5.1.4 ViewModel 模板
-
-```kotlin
-@HiltViewModel
-class HomeViewModel @Inject constructor(
-    private val getDataUseCase: GetDataUseCase
-) : ViewModel() {
-    
-    private val _state = MutableStateFlow(HomeState())
-    val state: StateFlow<HomeState> = _state.asStateFlow()
-    
-    private val _sideEffect = Channel<UiSideEffect>()
-    val sideEffect = _sideEffect.receiveAsFlow()
-    
-    fun handleIntent(intent: HomeIntent) {
-        when (intent) {
-            is HomeIntent.LoadData -> loadData()
-            is HomeIntent.Refresh -> refresh()
-            is HomeIntent.OnItemClick -> navigateToDetail(intent.id)
-        }
-    }
-    
-    private fun loadData() {
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
-            
-            getDataUseCase()
-                .onSuccess { data ->
-                    _state.update { 
-                        it.copy(isLoading = false, data = data) 
-                    }
-                }
-                .onFailure { error ->
-                    _state.update { 
-                        it.copy(isLoading = false, error = error.message) 
-                    }
-                }
-        }
-    }
-}
-```
-
-### 5.2 依赖注入（Hilt）
-
-#### 5.2.1 Application 类
-
-```kotlin
-@HiltAndroidApp
-class MyApplication : Application()
-```
-
-#### 5.2.2 模块设计
-
-- **AppModule**：应用级依赖（Context、Logger 等）
-- **NetworkModule**：网络相关（Retrofit、OkHttp）
-- **DatabaseModule**：数据库相关（Room、DataStore）
-- **RepositoryModule**：Repository 实现绑定
-
-### 5.3 网络层设计
-
-#### 5.3.1 API Service
-
-```kotlin
-interface ApiService {
-    @GET("endpoint")
-    suspend fun getData(): Response<DataDto>
-}
-```
-
-#### 5.3.2 错误处理
-
-```kotlin
-sealed class NetworkResult<out T> {
-    data class Success<T>(val data: T) : NetworkResult<T>()
-    data class Error(val exception: Exception) : NetworkResult<Nothing>()
-    data object Loading : NetworkResult<Nothing>()
-}
-```
-
-### 5.4 数据层设计
-
-#### 5.4.1 Repository 模式
-
-```kotlin
-interface DataRepository {
-    fun getData(): Flow<Result<List<Data>>>
-    suspend fun refreshData(): Result<Unit>
-}
-```
-
-#### 5.4.2 数据源优先级
-
-1. 先检查本地缓存
-2. 请求网络数据
-3. 更新本地缓存
-4. 返回数据
-
-### 5.5 导航设计
-
-#### 5.5.1 路由定义
-
-```kotlin
-sealed class Screen(val route: String) {
-    object Home : Screen("home")
-    object Detail : Screen("detail/{id}") {
-        fun createRoute(id: String) = "detail/$id"
-    }
-}
-```
-
-#### 5.5.2 导航图
-
-```kotlin
-@Composable
-fun NavGraph(navController: NavController) {
-    NavHost(
-        navController = navController,
-        startDestination = Screen.Home.route
-    ) {
-        composable(Screen.Home.route) {
-            HomeScreen()
-        }
-        composable(Screen.Detail.route) { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("id") ?: ""
-            DetailScreen(id = id)
-        }
-    }
-}
-```
-
-## 6. 开发规范
-
-### 6.1 命名规范
-
-- **类名**：PascalCase（`HomeViewModel`）
-- **函数/变量**：camelCase（`loadData()`）
-- **常量**：UPPER_SNAKE_CASE（`API_BASE_URL`）
-- **包名**：全小写，单词间用点分隔
-
-### 6.2 文件组织
-
-- 每个功能模块独立文件夹
-- ViewModel、State、Intent 放在同一模块下
-- 通用组件放在 `ui/common` 目录
-
-### 6.3 代码风格
-
-- 遵循 Kotlin 官方编码规范
-- 使用 `ktlint` 或 `detekt` 进行代码检查
-- 函数保持单一职责
-- 避免过深的嵌套（最多 3 层）
-
-### 6.4 注释规范
-
-- 公共 API 必须添加 KDoc 注释
-- 复杂业务逻辑添加行内注释
-- TODO 注释需包含任务描述和负责人
-
-## 7. 最佳实践
-
-### 7.1 Compose 最佳实践
-
-1. **状态提升**：将状态提升到合适的层级
-2. **重组优化**：使用 `remember`、`derivedStateOf` 减少重组
-3. **性能优化**：使用 `LazyColumn` 处理长列表
-4. **预览函数**：为每个 Composable 添加 `@Preview`
-
-### 7.2 MVI 最佳实践
-
-1. **单向数据流**：Intent → ViewModel → State → View
-2. **不可变状态**：使用 `data class` 和 `copy()` 更新状态
-3. **副作用隔离**：导航、Toast 等通过 SideEffect 处理
-4. **状态最小化**：只保存 UI 需要的状态
-
-### 7.3 错误处理
-
-1. **统一错误类型**：定义 `AppError` 密封类
-2. **用户友好提示**：将技术错误转换为用户可理解的提示
-3. **错误恢复**：提供重试机制
-4. **错误日志**：记录详细错误信息用于调试
-
-### 7.4 测试策略
-
-1. **单元测试**：测试 ViewModel、UseCase、Repository
-2. **UI 测试**：测试关键用户流程
-3. **集成测试**：测试模块间交互
-4. **覆盖率目标**：核心业务逻辑 > 80%
-
-## 8. 实施计划
-
-### 8.1 第一阶段：基础架构搭建（Week 1）
-
-- [ ] 配置项目依赖（Hilt、Retrofit、Room 等）
-- [ ] 搭建基础项目结构
-- [ ] 实现依赖注入模块
-- [ ] 配置主题系统
-- [ ] 实现导航框架
-
-### 8.2 第二阶段：核心功能实现（Week 2）
-
-- [ ] 实现网络层（Retrofit + OkHttp）
-- [ ] 实现数据层（Room + DataStore）
-- [ ] 实现 Repository 模式
-- [ ] 创建 MVI 基础类（State、Intent、ViewModel 模板）
-- [ ] 实现错误处理机制
-
-### 8.3 第三阶段：示例功能开发（Week 3）
-
-- [ ] 开发示例功能模块（如首页）
-- [ ] 实现完整的 MVI 流程
-- [ ] 添加加载、错误、空状态处理
-- [ ] 实现下拉刷新、上拉加载更多
-
-### 8.4 第四阶段：工具和优化（Week 4）
-
-- [ ] 添加日志系统
-- [ ] 实现工具类和扩展函数
-- [ ] 添加单元测试示例
-- [ ] 性能优化和代码审查
-- [ ] 编写使用文档
-
-## 9. 示例代码结构
-
-### 9.1 完整功能模块示例
-
-```
-feature/home/
-├── HomeScreen.kt          # UI 界面
-├── HomeViewModel.kt       # 状态管理
-├── HomeState.kt           # 状态定义
-├── HomeIntent.kt          # 意图定义
-├── HomeSideEffect.kt      # 副作用定义
-└── component/             # 子组件
-    ├── HomeItem.kt
-    └── HomeHeader.kt
-```
-
-### 9.2 数据流示例
-
-```
-User Click → HomeIntent.LoadData 
-    ↓
-HomeViewModel.handleIntent()
-    ↓
-UseCase.execute()
-    ↓
-Repository.getData()
-    ↓
-RemoteDataSource.fetch() / LocalDataSource.get()
-    ↓
-HomeState.update(data)
-    ↓
-HomeScreen recompose
-```
-
-## 10. 后续扩展
-
-### 10.1 可选功能
-
-- [ ] 多语言支持（i18n）
-- [ ] 深色模式完整支持
-- [ ] 性能监控（Firebase Performance）
-- [ ] 崩溃报告（Firebase Crashlytics）
-- [ ] 分析统计（Firebase Analytics）
-- [ ] 推送通知
-- [ ] 应用内更新
-
-### 10.2 架构演进
-
-- [ ] 模块化拆分（多模块架构）
-- [ ] 动态特性模块（Dynamic Feature）
-- [ ] 组件化架构
-- [ ] 微服务后端集成
-
-## 11. 参考资料
-
-- [Android 官方架构指南](https://developer.android.com/topic/architecture)
-- [Jetpack Compose 文档](https://developer.android.com/jetpack/compose)
-- [MVI 架构模式](https://www.raywenderlich.com/mvi-architecture-tutorial-for-android-getting-started)
-- [Kotlin 编码规范](https://kotlinlang.org/docs/coding-conventions.html)
-
----
-
-**文档版本**：v1.0  
-**最后更新**：2024年  
-**维护者**：开发团队
+### 4.1 MVI 基类
+
+`ui/mvi/BaseViewModel.kt` 为 `BaseViewModel<S : UiState, E : UiEffect>`，提供：
+
+- `state: StateFlow<S>`，`setState { copy(...) }` 原子更新。
+- `effect: Flow<E>`，内部使用 `Channel.BUFFERED`，`sendEffect` 发送一次性事件。
+- `launchOn()` 使用 `viewModelScope`，可指定调度器。
+
+`UiState`、`UiIntent`、`UiEffect` 是标记接口，不强制所有页面有相同字段；每个 ViewModel 实现自己的 `onIntent()`，没有公共 Intent 总线。
+
+### 4.2 页面职责
+
+- `Route` 使用 `collectAsStateWithLifecycle` 收集 State，在 `LaunchedEffect` 中消费 Effect。
+- `Screen` 只接收 State/回调；Preview 不构造真实 ViewModel。
+- 每页只保留一个 Effect 消费者。当前 Effect 收集与 composition 生命周期绑定，不保证后台导航或事件跨进程恢复。
+- 加载/重试在派发异步任务前标记状态以阻止重复请求。
+- 导航和短暂提示走 Effect；确认对话框等需持续渲染的内容可以保存在 State，不把它当作可丢弃消息。
+
+## 5. 数据操作契约
+
+### 5.1 结果边界
+
+一次性仓库操作返回 `AppResult<T>`：`Success(data)` 或 `Error(AppError)`。持续偏好观察使用 `Flow`。UseCase 直接传递仓库结果，不嵌套 `AppResult`。
+
+`data/common/appResultOf` 捕获普通 Exception 并调用 `Throwable.toAppError()`；**CancellationException 必须重新抛出**，JVM Error 不转换成用户错误。不要使用无差别 `runCatching` 吞取消。
+
+主题观察仅对 I/O 读取失败给默认值；其他异常与取消继续传播。会话读取失败返回 Error，不当作“未登录”或删除已有会话。
+
+### 5.2 首页缓存
+
+`ScaffoldRepositoryImpl.getScaffoldSummary(forceRefresh)`：
+
+1. 读取 Room；有缓存且非强制刷新时直接返回。
+2. 否则调用 Mock 远端数据源；失败或空响应不覆盖旧缓存。
+3. 成功后通过 DAO 的 `@Transaction replaceAll()` 原子删除/插入。
+4. 更新 DataStore 同步时间和指南标记，返回领域模型。
+
+数据库与 DataStore 元数据**不是跨存储事务**，不承诺同步时间与列表在异常情况下永远一致。当前也不是 stale-while-revalidate 策略。
+
+### 5.3 认证与会话
+
+- 登录仅识别 `demo@compose.dev / password123`。
+- 注册模拟成功并保存会话，不保存演示账号/密码，不能用于随后再次登录。
+- 会话基于 Token 非空判断存在；没有有效期、服务端失效处理和刷新。
+- 会话文件 `files/datastore/auth_session.preferences_pb` 从旧版备份、云备份和设备迁移排除。
+- Preferences DataStore 不提供加密；真实账号接入还需要凭据安全和请求认证设计。
+
+### 5.4 校验
+
+`AuthValidator` 返回 `ValidationResult.Valid` 或 `Invalid(AuthValidationError)`。UI 的 `ui/common/auth/AuthValidationUiText.kt` 负责资源映射。
+
+保留演示规则：邮箱非空并符合现有正则，密码非空且至少 6 个字符；注册确认密码和昵称由对应 ViewModel 校验。该规则不等于真实账号的安全策略。
+
+## 6. 页面恢复与适配
+
+- 首页首次加载失败显示 `ErrorContent` 和重试；已有内容刷新失败保留列表，通过 Snackbar 提示。
+- 模块搜索/筛选始终留在列表结构内；只有结果区显示空态，用户能清空关键词或取消阶段筛选。
+- Splash 有独立加载/错误状态，失败可重试；成功后只导航一次。
+- 设置写入失败保留当前选择并发送反馈；语言保存成功才触发 Activity 重建。
+- 首页按 WindowWidthSizeClass 切换 BottomBar、NavigationRail、PermanentDrawer。
+- 认证页保留宽屏双栏，内容可纵向滚动并处理 IME Insets；具体设备键盘布局仍需真机验收。
+
+## 7. 主题、语言与网络配置
+
+- Material 3 动态色（Android 12+）、浅/深/跟随系统主题；共享间距、圆角、阴影和语义色。
+- 默认英语，提供内置中英文资源与跟随系统选项。
+- `MainActivity.attachBaseContext()` 首帧前同步读取语言，I/O 失败回退默认值。Application 已不重复初始化语言，但仍有一次同步桥接；完整异步初始化/Android per-app locale 迁移另行设计。
+- App Bundle 禁用语言拆分，使应用内切换不依赖临时下载语言包。
+- Retrofit 地址仍为 `https://example.com/`，本轮不调用真实后端。
+- HTTP 日志 Debug 为 BASIC，Release 为 NONE。
+
+## 8. 测试与当前验证
+
+### 8.1 JVM
+
+`app/src/test/` 覆盖：领域校验、取消传播、仓库缓存/失败策略、登录/注册状态、首页刷新/筛选/设置失败、Splash 重试以及 MVI 基类。ViewModel 使用 `MainDispatcherRule` 和 fake 仓库；具体数据源交互用 MockK。
+
+### 8.2 Android
+
+`app/src/androidTest/` 覆盖：首页搜索无结果后仍可清空、错误页重试、短视口表单滚动、Room 替换与插入失败回滚。Room 测试用内存数据库和拒绝插入的 SQLite trigger 验证真正事务回滚。
+
+### 8.3 验证记录（2026-10-15）
+
+- 33 项 JVM 单测通过（包含原默认单测）。
+- `testDebugUnitTest`、`lintDebug`、`assembleDebug`、`assembleDebugAndroidTest` 通过；Lint 仍有警告，不能称“零告警”。
+- 6 项 Android 真机测试在 Android 10 设备上通过（包含原默认测试），验证搜索恢复、错误重试、短视口表单滚动和 Room 事务回滚。
+- 完整登录导航、语言/主题切换、重启会话、真实键盘视觉验收尚未完成。
+- 未收集覆盖率，不声称达到 80%。构建命令与报告路径见 README。
+
+## 9. 后续演进
+
+优先补设备验收、真实/Mock 变体绑定、真实会话生命周期、Room schema/迁移和自动化构建；然后依据实际需求处理 KSP、依赖升级、多模块与监控。保留已验证数据流，不以扩充基类数量作为完善目标。
+
+**文档版本：**v1.1；**更新日期：**2026-10-15。此文档描述当前实现，具体任务状态见 `DEVELOPMENT_PLAN.md`。

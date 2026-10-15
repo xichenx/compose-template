@@ -14,8 +14,11 @@ alwaysApply: true
 ## Layer Rules
 
 - `ui` 只依赖 `domain`，不要直接依赖 `data` 实现。
-- `domain` 放接口、模型和 use case，不放 Android 细节。
+- `domain` 放接口、模型和 use case，不放 Android 细节，也不引用 `R` 或 UI 层的 `UiText`。
 - `data` 负责远端、本地、仓库实现和模型转换。
+- 一次性仓库操作返回 `AppResult<T>`，在 data 层映射平台异常；UseCase 直接传递结果。
+- 捕获异常时先重新抛出 `CancellationException`；不把协程取消当成普通失败。
+- 缓存删除并插入使用 Room 事务；远端失败或空响应不覆盖旧缓存。
 - 通用能力优先沉淀到公共层，不要在 feature 内重复造轮子。
 
 ## Feature Rules

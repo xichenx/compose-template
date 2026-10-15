@@ -6,7 +6,7 @@ import com.xichen.dev.domain.model.onSuccess
 import com.xichen.dev.domain.usecase.RegisterParams
 import com.xichen.dev.domain.usecase.RegisterUseCase
 import com.xichen.dev.domain.validation.AuthValidator
-import com.xichen.dev.domain.validation.ValidationResult
+import com.xichen.dev.ui.common.auth.toUiTextOrNull
 import com.xichen.dev.ui.common.UiText
 import com.xichen.dev.ui.common.asUiText
 import com.xichen.dev.ui.mvi.BaseViewModel
@@ -179,12 +179,5 @@ class RegisterViewModel @Inject constructor(
             copy(successMessage = null)
         }
         sendEffect { RegisterEffect.NavigateToHome }
-    }
-
-    private fun ValidationResult.toUiTextOrNull(): UiText? {
-        return when (this) {
-            ValidationResult.Valid -> null
-            is ValidationResult.Invalid -> message
-        }
     }
 }

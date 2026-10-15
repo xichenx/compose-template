@@ -1,225 +1,95 @@
 # Compose MVI 脚手架开发计划
 
-## 1. 目标定义
+## 1. 目标与边界
 
-本计划用于把 `DESIGN_DOCUMENT.md` 中的架构设计落成一个可执行、可迭代、可复用的 Compose Android 脚手架项目。最终产物应满足以下目标：
+以单模块原生 Android Compose 项目作为可复制开发起点，优先保证现有功能的状态、失败恢复、数据一致性与测试，而不是增加框架复杂度。
 
-- 新项目初始化后即可直接进入业务开发，不再重复手写基础层代码。
-- 默认采用 `Compose + Material 3 + MVI + Clean Architecture`。
-- 具备开箱即用的 `网络层 / 本地存储 / 导航 / 状态管理 / 错误处理 / 测试` 能力。
-- 支持后续平滑演进到多模块架构。
+本轮保留 Mock 后端、UI 风格与已验证依赖组合。真实账号系统、Token 刷新、分页闭环、多模块拆分、监控和 CI 不纳入本轮交付。
 
-## 2. 范围边界
+## 2. 当前任务状态（2026-10-15）
 
-### 2.1 本期范围
+### 基础工程
 
-- 项目基础依赖和版本管理
-- 通用 MVI 基础设施
-- 单模块 App 架构骨架
-- 示例业务模块 `home`
-- 网络、本地缓存、偏好设置基础能力
-- 主题、导航、日志、错误处理
-- 基础单元测试模板
-- Cursor rules 和 skill 资产
+- [x] Gradle Version Catalog 与 Compose/Hilt/网络/存储依赖
+- [x] Application、MainActivity、AppNavHost、AppRoute
+- [x] State/Intent/Effect 标记接口和 BaseViewModel
+- [x] UI/Domain/Data 分包与仓库接口
+- [x] 通用反馈、表单、列表和主题参数组件
+- [x] 主题偏好、内置中英文和语言切换
+- [x] 首页窗口宽度自适应导航
+- [ ] 模块级依赖隔离（后续按规模拆分）
 
-### 2.2 暂不纳入
+### 本轮稳定性改造
 
-- 多模块拆分
-- 动态特性模块
-- Firebase 全家桶
-- 复杂权限中心
-- CI/CD 流水线
-- 代码生成器或 Gradle 插件化模板
+- [x] 搜索无结果时保留搜索和阶段筛选
+- [x] 初次加载失败可重试，刷新失败保留已显示列表
+- [x] 语言/主题操作失败反馈
+- [x] Splash 会话读取失败状态及重试、防止重复导航
+- [x] 认证页纵向滚动和 IME Insets
+- [x] Room 缓存替换事务
+- [x] AppResult 数据层错误边界和 CancellationException 传播
+- [x] 领域校验与 UI 文案映射分离
+- [x] 移除 Application 重复语言初始化，Activity I/O 失败回退默认语言
+- [x] Release HTTP 日志关闭、会话备份/迁移排除
+- [x] App Bundle 保留内置语言资源
+- [ ] 完全非阻塞语言启动 / Android per-app locale 迁移
+- [ ] Room 与 DataStore 元数据跨存储一致性设计
 
-## 3. 里程碑
+### 测试与文档
 
-### M1：项目骨架可运行
+- [x] coroutines-test、MainDispatcherRule、fake 仓库和 MockK
+- [x] 校验、结果/取消、仓库、首页、登录、注册、Splash、MVI 单测
+- [x] 首页搜索恢复/错误重试、短视口认证表单和 Room 回滚 Android 测试代码
+- [x] README 运行说明、功能边界和扩展步骤
+- [x] 设计文档、开发计划与生成约定同步
+- [x] Android UI/Room 测试设备执行（Android 10，6 项通过）
+- [ ] 真机重启会话、语言/主题切换、小屏/横屏/IME 视觉验收
+- [ ] 覆盖率统计（不以测试条数代替覆盖率）
 
-目标：应用可启动，主题、导航、基础目录结构完成。
+## 3. 本轮验证结果
 
-交付物：
-- 依赖版本统一管理
-- `Application`、`MainActivity`、`NavGraph`
-- 主题系统
-- 目录结构初始化
+已执行并通过：
 
-验收标准：
-- 项目可编译运行
-- 首页可正常展示
-- 支持深浅色主题切换
+```bash
+bash ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest
+bash ./gradlew :app:connectedDebugAndroidTest :app:lintDebug :app:assembleDebug
+```
 
-### M2：MVI 基础设施完成
+33 项 JVM 单测无失败、无跳过，应用和 Android 测试 APK 构建成功。Lint 任务通过但仍有依赖升级建议、未用资源、Modifier 参数位置、Kapt/KSP 等警告；没有宣称零告警。
 
-目标：形成可复用的状态、事件、副作用、基类 ViewModel。
+6 项 Android 真机测试在 Android 10 设备上通过，无失败、无跳过，覆盖搜索恢复、错误重试、短视口滚动及 Room 回滚。完整登录导航、语言/主题、重启会话和真实键盘视觉验收未完成。最终验证以交付报告和本地 `app/build/reports/` 为准。
 
-交付物：
-- `UiIntent`
-- `UiState`
-- `UiEffect`
-- `BaseViewModel`
-- 通用加载/错误/空态组件
+## 4. 后续优先级
 
-验收标准：
-- 新功能可基于模板快速创建
-- 所有 UI 状态通过 `StateFlow` 驱动
-- 一次性事件通过 `Channel/Flow` 下发
+### P0：完成设备验收
 
-### M3：数据层可用
+- [x] 连接设备执行 `:app:connectedDebugAndroidTest`（Android 10）
+- [ ] 演示登录 → 首页无结果搜索 → 清空恢复 → 刷新
+- [ ] 重启会话、语言/主题切换、小屏和键盘状态确认
 
-目标：完成网络、本地数据库、DataStore 和 Repository 基础能力。
+### P1：生产接入基础
 
-交付物：
-- Retrofit + OkHttp 配置
-- Room 数据库模板
-- DataStore 偏好存储
-- Result/Error 模型
-- Repository 模板
+- [ ] 明确真实 API 契约、环境地址和 Mock/Real 变体绑定
+- [ ] 会话有效期、刷新、失效清理、请求认证与登出 UI
+- [ ] Token 存储安全方案（DataStore 不等于加密）
+- [ ] Room schema 导出与迁移验证
+- [ ] 自动化 JVM/Lint/APK 构建检查
 
-验收标准：
-- 示例模块能够发起请求并渲染数据
-- 本地缓存与刷新逻辑可运行
-- 错误态具备统一转换与展示能力
+### P2：按实际需求演进
 
-### M4：示例模块闭环
+- [ ] KSP 和依赖兼容性升级，分别验证而非同时盲升
+- [ ] 剩余 Lint/资源清理和本地化复数支持
+- [ ] 端到端分页、权限、图片加载等业务能力
+- [ ] 覆盖率、性能和崩溃监控
+- [ ] 业务增长后拆模块；不提前引入空模块和复杂状态框架
 
-目标：完成一个完整业务模块，验证脚手架设计有效。
+## 5. 交付资产
 
-交付物：
-- `home` 示例模块
-- 列表、刷新、点击事件、副作用跳转
-- 预览函数与测试样例
+- `README.md`：运行、验证、扩展与 Mock 边界
+- `DESIGN_DOCUMENT.md`：当前架构及行为契约
+- `DEVELOPMENT_PLAN.md`：已交付与待验收任务
+- `.cursor/rules/*.mdc`：开发约定
+- `COMPOSE_MVI_SCAFFOLD_SKILL.md`：feature 模板与生成检查清单
+- `app/src/test/`、`app/src/androidTest/`：回归示例
 
-验收标准：
-- 形成完整 `Intent -> ViewModel -> State -> UI` 链路
-- 关键交互可测试
-- 新成员可按样例复制扩展
-
-### M5：工程化收尾
-
-目标：让脚手架具备实际团队交付价值。
-
-交付物：
-- 日志与调试能力
-- Lint / 格式化建议
-- README 或使用说明
-- Cursor rules / skill
-
-验收标准：
-- 文档可指导新项目接入
-- AI 和人工协作时输出一致
-- 代码结构符合既定约束
-
-## 4. 工作拆解
-
-### 4.1 基础工程
-
-- 升级并统一 `libs.versions.toml` 中的依赖版本
-- 增加 `lifecycle-viewmodel-compose`、`navigation-compose`
-- 增加 `hilt`、`retrofit`、`okhttp`、`room`、`datastore`
-- 增加测试依赖 `mockk` 或 `mockito`、`turbine`
-
-### 4.2 应用启动层
-
-- 新增 `App.kt` 作为 `@HiltAndroidApp` 入口
-- 改造 `MainActivity`，只负责承载根导航和根主题
-- 添加 `AppNavHost`、`AppRoute`
-
-### 4.3 通用 MVI 基建
-
-- 设计 `UiIntent`、`UiState`、`UiEffect`
-- 设计 `BaseViewModel<State, Intent, Effect>`
-- 提供 `reduce`、`sendEffect`、`handleIntent` 统一范式
-- 统一加载、错误、空态状态字段
-
-### 4.4 数据层
-
-- 新增 `remote/api`
-- 新增 `remote/dto`
-- 新增 `local/database`
-- 新增 `local/datastore`
-- 新增 `repository`
-- 定义领域层接口，数据层仅负责实现
-
-### 4.5 领域层
-
-- 明确 `model` 与 `usecase` 边界
-- 每个 UseCase 仅处理单一业务动作
-- Repository 接口放在 `domain/repository`
-
-### 4.6 UI 层
-
-- 以 `feature/home` 作为模板模块
-- Screen 不直接持有业务逻辑
-- ViewModel 负责状态流与副作用
-- 组件拆分优先无状态组件
-
-### 4.7 测试与质量
-
-- 为 `BaseViewModel` 编写基础单测
-- 为 `HomeViewModel` 编写状态流测试
-- 为 Repository 编写成功/失败分支测试
-- 为 `HomeScreen` 编写基础 Compose UI 测试
-
-## 5. 推荐开发顺序
-
-1. 完成依赖与版本治理。
-2. 建立目录结构和 Application 入口。
-3. 完成导航与主题根节点。
-4. 实现 MVI 基类与通用 UI 状态组件。
-5. 接入 Hilt。
-6. 接入 Retrofit / OkHttp / Room / DataStore。
-7. 编写 `home` 示例模块。
-8. 补齐测试与文档。
-
-## 6. 任务清单
-
-### P0
-
-- [ ] 补全工程依赖与插件
-- [ ] 搭建标准目录结构
-- [ ] 完成 MVI 基类
-- [ ] 接入 Hilt
-- [ ] 完成导航骨架
-- [ ] 完成 `home` 模块样板
-
-### P1
-
-- [ ] 接入 Retrofit + OkHttp
-- [ ] 接入 Room + DataStore
-- [ ] 完成统一错误模型
-- [ ] 完成日志封装
-- [ ] 添加测试样例
-
-### P2
-
-- [ ] 补充更多通用组件
-- [ ] 预留多模块拆分边界
-- [ ] 增强脚手架 README
-
-## 7. 交付清单
-
-- `DESIGN_DOCUMENT.md`
-- `DEVELOPMENT_PLAN.md`
-- `.cursor/rules/*.mdc`
-- `.cursor/skills/compose-mvi-scaffold-skill.md`
-- 可运行的 Compose MVI 骨架代码
-- 示例模块与测试样例
-
-## 8. 风险与应对
-
-| 风险 | 说明 | 应对策略 |
-|------|------|----------|
-| 依赖版本不兼容 | Compose、Kotlin、AGP 联动较强 | 固定 BOM 与 Kotlin 版本，逐步升级 |
-| MVI 过度模板化 | 可能导致样板代码增多 | 用基类和约定减少重复 |
-| 单模块后期膨胀 | 功能增加后目录复杂 | 提前约束 package 结构，保留多模块迁移点 |
-| 状态设计不清 | 容易把业务和 UI 状态混在一起 | 强制区分 State、Effect、Domain Model |
-
-## 9. 完成定义
-
-满足以下条件视为脚手架一期完成：
-
-- 项目可直接作为新业务项目起点使用
-- 新增一个 feature 时只需复制模板并替换领域模型
-- 首页模块具备完整的 MVI 演示能力
-- 核心路径具备基础测试
-- 文档、rules、skill 三类资产齐备
+一期定位为可运行、可测试的演示脚手架，不是可直接上线的生产认证系统。

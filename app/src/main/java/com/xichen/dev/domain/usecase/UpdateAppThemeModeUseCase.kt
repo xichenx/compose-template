@@ -10,7 +10,6 @@ class UpdateAppThemeModeUseCase @Inject constructor(
     private val scaffoldRepository: ScaffoldRepository
 ) : BaseSuspendUseCase<AppThemeMode, Unit>() {
     override suspend fun execute(params: AppThemeMode): AppResult<Unit> {
-        scaffoldRepository.updateAppThemeMode(params)
-        return AppResult.Success(Unit)
+        return scaffoldRepository.updateAppThemeMode(params)
     }
 }

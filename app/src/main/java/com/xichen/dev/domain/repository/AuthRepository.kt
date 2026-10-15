@@ -10,6 +10,6 @@ interface AuthRepository {
         email: String,
         password: String
     ): AppResult<LoginSession>
-    suspend fun getCachedSession(): LoginSession?
-    suspend fun clearSession()
+    suspend fun getCachedSession(): AppResult<LoginSession?>
+    suspend fun clearSession(): AppResult<Unit>
 }

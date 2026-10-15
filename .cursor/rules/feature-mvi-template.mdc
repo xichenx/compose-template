@@ -24,7 +24,9 @@ description: Generate a new feature module with the project's MVI template
 
 - `State` 只保存渲染页面所需的数据。
 - 通用字段优先包含 `isLoading`、`errorMessage`、`isEmpty`。
-- 不把导航、Toast、Dialog 这类一次性事件塞进状态。
+- 导航、Toast 等一次性事件走 Effect；需要持续渲染并确认的对话框内容可以保存在 State。
+- 刷新失败保留已有内容；首次加载失败展示重试。
+- 搜索/筛选控件不随无匹配空态消失。
 
 ## ViewModel Contract
 
@@ -35,9 +37,9 @@ description: Generate a new feature module with the project's MVI template
 
 ## Screen Contract
 
-- Screen 负责收集状态并绑定事件。
-- 首次加载使用 `LaunchedEffect(Unit)` 派发初始化 intent。
-- 导航、Toast 等 effect 在 Screen 层消费。
+- Route 负责收集状态、分发 Intent 和消费 Effect；Screen 只渲染并绑定回调。
+- 首次加载使用 `LaunchedEffect(Unit)` 派发初始化 intent；ViewModel 在异步任务前标记加载状态，避免重复请求。
+- 每页只保留一个 Effect 消费者，导航、Toast 等在 Route 层消费。
 - 复杂 UI 拆到 `component/` 下，保持 Screen 简洁。
 
 ## Domain Contract

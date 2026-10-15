@@ -57,18 +57,18 @@ class HomeViewModel @Inject constructor(
         }
 
         val hasContent = currentState.highlightListState.items.isNotEmpty()
+        setState {
+            copy(
+                isLoading = !hasContent,
+                errorMessage = null,
+                highlightListState = if (hasContent) {
+                    highlightListState.markRefreshing()
+                } else {
+                    highlightListState.stopLoading()
+                }
+            )
+        }
         launchOn {
-            setState {
-                copy(
-                    isLoading = !forceRefresh && !hasContent,
-                    errorMessage = null,
-                    highlightListState = when {
-                        forceRefresh && hasContent -> highlightListState.markRefreshing()
-                        else -> highlightListState.stopLoading()
-                    }
-                )
-            }
-
             getScaffoldHighlightsUseCase(GetScaffoldHighlightsParams(forceRefresh = forceRefresh))
                 .onSuccess { summary ->
                     onLoadSuccess(summary, forceRefresh)
@@ -77,9 +77,12 @@ class HomeViewModel @Inject constructor(
                     setState {
                         copy(
                             isLoading = false,
-                            errorMessage = error.asUiText(),
+                            errorMessage = if (hasContent) null else error.asUiText(),
                             highlightListState = highlightListState.stopLoading()
                         )
+                    }
+                    if (hasContent) {
+                        sendEffect { HomeEffect.ShowMessage(error.asUiText()) }
                     }
                 }
         }
@@ -156,6 +159,8 @@ class HomeViewModel @Inject constructor(
         launchOn {
             getAppLanguageUseCase().onSuccess { language ->
                 setState { copy(selectedAppLanguage = language) }
+            }.onError { error ->
+                sendEffect { HomeEffect.ShowMessage(error.asUiText()) }
             }
         }
     }
@@ -167,6 +172,8 @@ class HomeViewModel @Inject constructor(
             updateAppLanguageUseCase(language).onSuccess {
                 setState { copy(selectedAppLanguage = language) }
                 sendEffect { HomeEffect.RecreateActivity }
+            }.onError { error ->
+                sendEffect { HomeEffect.ShowMessage(error.asUiText()) }
             }
         }
     }
@@ -188,6 +195,8 @@ class HomeViewModel @Inject constructor(
         launchOn {
             updateAppThemeModeUseCase(themeMode).onSuccess {
                 setState { copy(selectedAppThemeMode = themeMode) }
+            }.onError { error ->
+                sendEffect { HomeEffect.ShowMessage(error.asUiText()) }
             }
         }
     }

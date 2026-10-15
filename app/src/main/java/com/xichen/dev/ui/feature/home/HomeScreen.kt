@@ -51,6 +51,7 @@ import com.xichen.dev.ui.common.AppStateContent
 import com.xichen.dev.ui.common.AppStatusCard
 import com.xichen.dev.ui.common.AppTopBar
 import com.xichen.dev.domain.model.ScaffoldHighlight
+import com.xichen.dev.ui.common.EmptyContent
 import com.xichen.dev.ui.common.UiText
 import com.xichen.dev.ui.common.asString
 import com.xichen.dev.ui.common.resolve
@@ -270,19 +271,9 @@ private fun HomeTabContent(
             HomeTab.Modules -> AppStateContent(
                 isLoading = state.isLoading,
                 errorMessage = state.errorMessage,
-                isEmpty = state.filteredHighlights.isEmpty(),
+                isEmpty = false,
                 modifier = Modifier.fillMaxSize(),
                 loadingMessage = UiText.StringResource(R.string.home_loading),
-                emptyTitle = if (state.hasActiveModuleFilters) {
-                    UiText.StringResource(R.string.home_modules_empty_filtered_title)
-                } else {
-                    UiText.StringResource(R.string.home_empty_title)
-                },
-                emptyDescription = if (state.hasActiveModuleFilters) {
-                    UiText.StringResource(R.string.home_modules_empty_filtered_description)
-                } else {
-                    null
-                },
                 onRetry = { onIntent(HomeIntent.RetryLoad) }
             ) {
                 HomeModulesContent(
@@ -290,6 +281,7 @@ private fun HomeTabContent(
                     stageOptions = state.availableStages,
                     selectedStages = state.selectedStages,
                     highlights = state.filteredHighlights,
+                    hasActiveFilters = state.hasActiveModuleFilters,
                     isLoadingMore = state.highlightListState.isLoadingMore,
                     hasMore = state.highlightListState.hasMore,
                     onSearchQueryChange = { onIntent(HomeIntent.SearchModules(it)) },
@@ -394,6 +386,7 @@ private fun HomeModulesContent(
     stageOptions: List<String>,
     selectedStages: Set<String>,
     highlights: List<ScaffoldHighlight>,
+    hasActiveFilters: Boolean,
     isLoadingMore: Boolean,
     hasMore: Boolean,
     onSearchQueryChange: (String) -> Unit,
@@ -457,6 +450,21 @@ private fun HomeModulesContent(
                         }
                     },
                     contentPadding = PaddingValues(horizontal = 0.dp)
+                )
+            }
+        }
+        if (highlights.isEmpty()) {
+            item {
+                EmptyContent(
+                    title = UiText.StringResource(
+                        if (hasActiveFilters) R.string.home_modules_empty_filtered_title else R.string.home_empty_title
+                    ),
+                    description = if (hasActiveFilters) {
+                        UiText.StringResource(R.string.home_modules_empty_filtered_description)
+                    } else {
+                        null
+                    },
+                    fullscreen = false
                 )
             }
         }
